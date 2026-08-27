@@ -103,6 +103,7 @@ describe('CacheEnabledApiClient', () => {
     });
     window.history.pushState({}, '', `/app/accounts/${ACCOUNT_ID}/dashboard`);
     await client.get(true);
+    const firstAccountDataManager = client.dataManager;
     client.dataManager.db?.close();
 
     const otherAccountResponses = [
@@ -118,6 +119,7 @@ describe('CacheEnabledApiClient', () => {
 
     expect(response.data).toEqual(otherAccountResponses);
     expect(listRequests()).toHaveLength(1);
+    expect(firstAccountDataManager.db).toBeNull();
   });
 
   it('skips the cache entirely when asked for a network read', async () => {
@@ -219,5 +221,28 @@ describe('CacheEnabledApiClient', () => {
     const response = await client.get(true);
 
     expect(response.data.payload).toEqual(inboxes);
+  });
+
+  it('falls back to the network when IndexedDB initialization never settles', async () => {
+    vi.useFakeTimers();
+    stubEndpoints({
+      cacheKeys: { inbox: 'key-1' },
+      payload: { payload: inboxes },
+    });
+    const client = buildClient(WrappedClient);
+    const initDb = vi
+      .spyOn(client.dataManager, 'initDb')
+      .mockReturnValue(new Promise(() => {}));
+
+    const responsePromise = client.get(true);
+    await vi.advanceTimersByTimeAsync(2000);
+    const response = await responsePromise;
+
+    expect(response.data.payload).toEqual(inboxes);
+    expect(initDb).toHaveBeenCalledTimes(1);
+
+    await client.get(true);
+    expect(initDb).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 });
