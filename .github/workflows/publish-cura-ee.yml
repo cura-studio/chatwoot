@@ -1,0 +1,69 @@
+name: Publish CURA Chatwoot EE hotfix
+
+on:
+  push:
+    branches:
+      - release/v4.17.0-cura
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: publish-cura-chatwoot-ee-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/cura-studio/chatwoot
+
+jobs:
+  build-and-publish:
+    if: github.repository == 'cura-studio/chatwoot'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout immutable release source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish linux/amd64 image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:4.17.0-cura-indexeddb
+            ${{ env.IMAGE_NAME }}:4.17.0-cura-indexeddb-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=4.17.0-cura-indexeddb
+          provenance: mode=max
+          sbom: true
+
+      - name: Verify published immutable digest
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          test -n "$IMAGE_DIGEST"
+          docker buildx imagetools inspect "${IMAGE_NAME}@${IMAGE_DIGEST}"
+          {
+            echo "### Published Chatwoot image"
+            echo
+            echo "\`${IMAGE_NAME}@${IMAGE_DIGEST}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
