@@ -2,10 +2,13 @@
 import { DataManager } from '../helper/CacheHelper/DataManager';
 import ApiClient from './ApiClient';
 
+const CACHE_OPERATION_TIMEOUT_MS = 2000;
+
 class CacheEnabledApiClient extends ApiClient {
   constructor(resource, options = {}) {
     super(resource, options);
     this.accountDataManager = null;
+    this.cacheDisabledAccounts = new Set();
   }
 
   // These clients are module level singletons, so they are constructed before the router
@@ -17,6 +20,7 @@ class CacheEnabledApiClient extends ApiClient {
     const accountId = this.accountIdFromRoute;
 
     if (this.accountDataManager?.accountId !== accountId) {
+      this.accountDataManager?.closeDb();
       this.accountDataManager = new DataManager(accountId);
     }
 
@@ -29,7 +33,9 @@ class CacheEnabledApiClient extends ApiClient {
   }
 
   get(cache = false) {
-    if (cache) {
+    const accountId = this.accountIdFromRoute;
+
+    if (cache && !this.cacheDisabledAccounts.has(accountId)) {
       return this.getFromCache();
     }
 
@@ -50,11 +56,31 @@ class CacheEnabledApiClient extends ApiClient {
     return { data: { payload: dataToParse } };
   }
 
+  async initializeCache() {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error('Browser cache initialization timed out'));
+      }, CACHE_OPERATION_TIMEOUT_MS);
+    });
+
+    try {
+      return await Promise.race([this.dataManager.initDb(), timeout]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  disableCacheForCurrentAccount() {
+    this.cacheDisabledAccounts.add(this.accountIdFromRoute);
+  }
+
   async getFromCache() {
     try {
       // IDB is not supported in Firefox private mode: https://bugzilla.mozilla.org/show_bug.cgi?id=781982
-      await this.dataManager.initDb();
+      await this.initializeCache();
     } catch {
+      this.disableCacheForCurrentAccount();
       return this.getFromNetwork();
     }
 
@@ -82,7 +108,7 @@ class CacheEnabledApiClient extends ApiClient {
     const response = await this.getFromNetwork();
 
     try {
-      await this.dataManager.initDb();
+      await this.initializeCache();
 
       await this.dataManager.replace({
         modelName: this.cacheModelName,
@@ -93,7 +119,7 @@ class CacheEnabledApiClient extends ApiClient {
         [this.cacheModelName]: newKey,
       });
     } catch {
-      // Ignore error
+      this.disableCacheForCurrentAccount();
     }
 
     return response;
@@ -101,7 +127,7 @@ class CacheEnabledApiClient extends ApiClient {
 
   async validateCacheKey(cacheKeyFromApi) {
     if (!this.dataManager.db) {
-      await this.dataManager.initDb();
+      await this.initializeCache();
     }
 
     const cachekey = await this.dataManager.getCacheKey(this.cacheModelName);

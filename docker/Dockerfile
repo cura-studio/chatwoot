@@ -153,3 +153,8 @@ COPY --from=pre-builder /app/.git_sha /app/.git_sha
 WORKDIR /app
 
 EXPOSE 3000
+
+# Match the edition currently deployed by CURA. The upstream EE image sets
+# this at build time as well; keeping it in the committed release makes the
+# resulting image reproducible instead of relying on an untracked mutation.
+ENV CW_EDITION="ee"

@@ -6,36 +6,58 @@ export class DataManager {
     this.modelsToSync = ['inbox', 'label', 'team', 'canned_response'];
     this.accountId = accountId;
     this.db = null;
+    this.dbPromise = null;
   }
 
   async initDb() {
     if (this.db) return this.db;
     const dbName = `cw-store-${this.accountId}`;
-    this.db = await openDB(`cw-store-${this.accountId}`, DATA_VERSION, {
-      upgrade(db) {
-        // Existing databases already carry the stores added in earlier versions,
-        // and createObjectStore throws on a name that is already taken.
-        const createStore = (name, options) => {
-          if (db.objectStoreNames.contains(name)) return;
-          db.createObjectStore(name, options);
-        };
+    if (!this.dbPromise) {
+      this.dbPromise = openDB(dbName, DATA_VERSION, {
+        upgrade(db) {
+          // Existing databases already carry the stores added in earlier versions,
+          // and createObjectStore throws on a name that is already taken.
+          const createStore = (name, options) => {
+            if (db.objectStoreNames.contains(name)) return;
+            db.createObjectStore(name, options);
+          };
 
-        createStore('cache-keys');
-        createStore('inbox', { keyPath: 'id' });
-        createStore('label', { keyPath: 'id' });
-        createStore('team', { keyPath: 'id' });
-        createStore('canned_response', { keyPath: 'id' });
-      },
-    });
+          createStore('cache-keys');
+          createStore('inbox', { keyPath: 'id' });
+          createStore('label', { keyPath: 'id' });
+          createStore('team', { keyPath: 'id' });
+          createStore('canned_response', { keyPath: 'id' });
+        },
+        blocking: () => this.closeDb(),
+        terminated: () => this.closeDb(),
+      })
+        .then(db => {
+          this.db = db;
 
-    // Store the database name in LocalStorage
-    const dbNames = JSON.parse(localStorage.getItem('cw-idb-names') || '[]');
-    if (!dbNames.includes(dbName)) {
-      dbNames.push(dbName);
-      localStorage.setItem('cw-idb-names', JSON.stringify(dbNames));
+          // Store the database name in LocalStorage
+          const dbNames = JSON.parse(
+            localStorage.getItem('cw-idb-names') || '[]'
+          );
+          if (!dbNames.includes(dbName)) {
+            dbNames.push(dbName);
+            localStorage.setItem('cw-idb-names', JSON.stringify(dbNames));
+          }
+
+          return db;
+        })
+        .catch(error => {
+          this.dbPromise = null;
+          throw error;
+        });
     }
 
-    return this.db;
+    return this.dbPromise;
+  }
+
+  closeDb() {
+    this.db?.close();
+    this.db = null;
+    this.dbPromise = null;
   }
 
   validateModel(name) {
