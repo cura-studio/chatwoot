@@ -1,6 +1,7 @@
 import {
   shouldBeUrl,
   isPhoneNumberValidWithDialCode,
+  normalizePhoneWithDefaultBrazil,
   isPhoneE164OrEmpty,
   isPhoneE164,
   startsWithPlus,
@@ -107,6 +108,37 @@ describe('#isPhoneNumberValidWithDialCode', () => {
   it('should return wrong phone number', () => {
     expect(isPhoneNumberValidWithDialCode('+123')).toEqual(false);
     expect(isPhoneNumberValidWithDialCode('+1234')).toEqual(false);
+  });
+  it('should validate Brazilian numbers (+55) by DDD and length', () => {
+    expect(isPhoneNumberValidWithDialCode('+5511912345678')).toEqual(true);
+    expect(isPhoneNumberValidWithDialCode('+551133334444')).toEqual(true);
+    expect(isPhoneNumberValidWithDialCode('+55123')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+551191234567')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+5511812345678')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+5501912345678')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+55119123456789')).toEqual(false);
+  });
+});
+
+describe('#normalizePhoneWithDefaultBrazil', () => {
+  it('assumes Brazil when there is no country code', () => {
+    expect(normalizePhoneWithDefaultBrazil('(11) 91234-5678')).toEqual(
+      '+5511912345678'
+    );
+    expect(normalizePhoneWithDefaultBrazil('011 91234-5678')).toEqual(
+      '+5511912345678'
+    );
+    expect(normalizePhoneWithDefaultBrazil('55 11 91234-5678')).toEqual(
+      '+5511912345678'
+    );
+  });
+  it('keeps an explicit country code', () => {
+    expect(normalizePhoneWithDefaultBrazil('+351 912 345 678')).toEqual(
+      '+351912345678'
+    );
+  });
+  it('returns empty for empty input', () => {
+    expect(normalizePhoneWithDefaultBrazil('  ')).toEqual('');
   });
 });
 

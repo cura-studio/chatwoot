@@ -30,7 +30,30 @@ export const isPhoneE164OrEmpty = value => isPhoneE164(value) || value === '';
  */
 export const isPhoneNumberValidWithDialCode = value => {
   const number = value.replace(/^\+/, ''); // Remove the '+' sign
-  return !!number.match(/^[1-9]\d{4,}$/); // Validate the phone number with minimum 5 digits
+  if (!number.match(/^[1-9]\d{4,}$/)) return false; // Minimum 5 digits
+  // CURA: +55 is Brazil only. Require DDD (11-99) + 8-digit landline (2-5)
+  // or 9-digit mobile starting with 9, i.e. 10 or 11 national digits.
+  if (number.startsWith('55')) {
+    return /^55[1-9][1-9](9\d{8}|[2-5]\d{7})$/.test(number);
+  }
+  return true;
+};
+
+/**
+ * CURA: normalizes a phone typed in a free field. Numbers starting with "+"
+ * keep their country code; anything else is treated as Brazilian (+55),
+ * dropping leading zeros and a repeated 55 country code.
+ * @param {string} value - The phone as typed by the visitor.
+ * @returns {string} The phone in "+<digits>" form, or '' when empty.
+ */
+export const normalizePhoneWithDefaultBrazil = (value = '') => {
+  const raw = String(value).trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  if (raw.startsWith('+')) return `+${digits}`;
+  let national = digits.replace(/^0+/, '');
+  if (/^55\d{10,11}$/.test(national)) national = national.slice(2);
+  return `+55${national}`;
 };
 
 /**

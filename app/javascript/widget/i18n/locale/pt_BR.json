@@ -80,7 +80,7 @@
         "PLACEHOLDER": "Por favor, digite seu número de telefone",
         "REQUIRED_ERROR": "O número de telefone é obrigatório",
         "DIAL_CODE_VALID_ERROR": "Por favor, selecione um código de país",
-        "VALID_ERROR": "Por favor, insira um número de telefone válido",
+        "VALID_ERROR": "Número inválido. No Brasil, informe DDD + número (10 ou 11 dígitos), ex.: 11 91234-5678",
         "DROPDOWN_EMPTY": "Nenhum resultado encontrado",
         "DROPDOWN_SEARCH": "Selecione o país"
       },
@@ -154,5 +154,10 @@
   },
   "FOOTER_REPLY_TO": {
     "REPLY_TO": "Respondendo a:"
+  },
+  "PHONE_REQUEST": {
+    "TITLE": "Quer receber a resposta pelo WhatsApp? Deixe seu número com DDD.",
+    "SAVE": "Salvar",
+    "LATER": "Agora não"
   }
 }
