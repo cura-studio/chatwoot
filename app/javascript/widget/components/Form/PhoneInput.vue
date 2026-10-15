@@ -75,7 +75,14 @@ function setContextValue(code) {
 }
 
 function onChange(e) {
-  phoneNumber.value = e.target.value;
+  // CURA: keep digits only so "(11) 91234-5678" becomes a valid E.164 value.
+  let digits = e.target.value.replace(/\D/g, '');
+  if (activeDialCode.value === '+55') {
+    digits = digits.replace(/^0+/, '');
+    if (/^55\d{10,11}$/.test(digits)) digits = digits.slice(2);
+  }
+  phoneNumber.value = digits;
+  e.target.value = digits;
   // This function is used to set the context value when the user types in the phone number field.
   setContextValue(activeDialCode.value);
 }
@@ -191,7 +198,9 @@ function onSelect() {
       </span>
       <input
         :value="phoneNumber"
-        type="phoneInput"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel-national"
         class="w-full h-full !py-3 pl-2 pr-3 leading-tight rounded-r !outline-none focus:!ring-0 !bg-transparent dark:!bg-transparent"
         name="phoneNumber"
         :placeholder="placeholder"

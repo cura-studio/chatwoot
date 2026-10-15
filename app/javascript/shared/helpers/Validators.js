@@ -30,7 +30,13 @@ export const isPhoneE164OrEmpty = value => isPhoneE164(value) || value === '';
  */
 export const isPhoneNumberValidWithDialCode = value => {
   const number = value.replace(/^\+/, ''); // Remove the '+' sign
-  return !!number.match(/^[1-9]\d{4,}$/); // Validate the phone number with minimum 5 digits
+  if (!number.match(/^[1-9]\d{4,}$/)) return false; // Minimum 5 digits
+  // CURA: +55 is Brazil only. Require DDD (11-99) + 8-digit landline (2-5)
+  // or 9-digit mobile starting with 9, i.e. 10 or 11 national digits.
+  if (number.startsWith('55')) {
+    return /^55[1-9][1-9](9\d{8}|[2-5]\d{7})$/.test(number);
+  }
+  return true;
 };
 
 /**

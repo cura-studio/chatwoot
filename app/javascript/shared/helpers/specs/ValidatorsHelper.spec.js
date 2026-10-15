@@ -108,6 +108,15 @@ describe('#isPhoneNumberValidWithDialCode', () => {
     expect(isPhoneNumberValidWithDialCode('+123')).toEqual(false);
     expect(isPhoneNumberValidWithDialCode('+1234')).toEqual(false);
   });
+  it('should validate Brazilian numbers (+55) by DDD and length', () => {
+    expect(isPhoneNumberValidWithDialCode('+5511912345678')).toEqual(true);
+    expect(isPhoneNumberValidWithDialCode('+551133334444')).toEqual(true);
+    expect(isPhoneNumberValidWithDialCode('+55123')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+551191234567')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+5511812345678')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+5501912345678')).toEqual(false);
+    expect(isPhoneNumberValidWithDialCode('+55119123456789')).toEqual(false);
+  });
 });
 
 describe('#startsWithPlus', () => {
