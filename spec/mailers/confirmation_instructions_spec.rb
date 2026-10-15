@@ -51,7 +51,7 @@ RSpec.describe 'Devise::Mailer' do
     end
 
     it 'does not render the agent notification preferences footer' do
-      expect(mail_body).not_to include('Manage notification preferences')
+      expect(mail_body).not_to include('Gerenciar notificações')
     end
 
     context 'when there is an inviter' do
