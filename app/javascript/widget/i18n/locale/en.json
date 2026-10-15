@@ -154,5 +154,10 @@
   },
   "FOOTER_REPLY_TO": {
     "REPLY_TO": "Replying to:"
+  },
+  "PHONE_REQUEST": {
+    "TITLE": "Want the reply on WhatsApp? Leave your number with area code.",
+    "SAVE": "Save",
+    "LATER": "Not now"
   }
 }

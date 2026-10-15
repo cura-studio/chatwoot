@@ -40,6 +40,23 @@ export const isPhoneNumberValidWithDialCode = value => {
 };
 
 /**
+ * CURA: normalizes a phone typed in a free field. Numbers starting with "+"
+ * keep their country code; anything else is treated as Brazilian (+55),
+ * dropping leading zeros and a repeated 55 country code.
+ * @param {string} value - The phone as typed by the visitor.
+ * @returns {string} The phone in "+<digits>" form, or '' when empty.
+ */
+export const normalizePhoneWithDefaultBrazil = (value = '') => {
+  const raw = String(value).trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  if (raw.startsWith('+')) return `+${digits}`;
+  let national = digits.replace(/^0+/, '');
+  if (/^55\d{10,11}$/.test(national)) national = national.slice(2);
+  return `+55${national}`;
+};
+
+/**
  * Checks if a string starts with a plus sign.
  * @param {string} value - The string to check.
  * @returns {boolean} True if the string starts with '+', false otherwise.

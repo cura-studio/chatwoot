@@ -4,6 +4,7 @@ import { getContrastingTextColor } from '@chatwoot/utils';
 import CustomButton from 'shared/components/Button.vue';
 import FooterReplyTo from 'widget/components/FooterReplyTo.vue';
 import ChatInputWrap from 'widget/components/ChatInputWrap.vue';
+import PhoneRequest from 'widget/components/PhoneRequest.vue';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { sendEmailTranscript } from 'widget/api/conversation';
 import { useRouter } from 'vue-router';
@@ -18,6 +19,7 @@ export default {
     ChatInputWrap,
     CustomButton,
     FooterReplyTo,
+    PhoneRequest,
   },
   setup() {
     const router = useRouter();
@@ -143,6 +145,7 @@ export default {
         hasReplyTo,
     }"
   >
+    <PhoneRequest />
     <FooterReplyTo
       v-if="hasReplyTo"
       :in-reply-to="inReplyTo"

@@ -154,5 +154,10 @@
   },
   "FOOTER_REPLY_TO": {
     "REPLY_TO": "Respondendo a:"
+  },
+  "PHONE_REQUEST": {
+    "TITLE": "Quer receber a resposta pelo WhatsApp? Deixe seu número com DDD.",
+    "SAVE": "Salvar",
+    "LATER": "Agora não"
   }
 }
